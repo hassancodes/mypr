@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gym Tracker • One‑Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    html { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    .glass { backdrop-filter: blur(10px); background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)); }
+    .stripe { background-image: linear-gradient(135deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(225deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%), linear-gradient(315deg, rgba(255,255,255,0.06) 25%, rgba(0,0,0,0.06) 25%); background-position: 10px 0, 10px 0, 0 0, 0 0; background-size: 10px 10px; background-repeat: repeat; }
+  </style>
+</head>
+<body class="min-h-screen bg-neutral-950 text-neutral-100">
+  <!-- Hero/Header -->
+  <header class="relative overflow-hidden">
+    <div class="absolute inset-0 -z-10">
+      <div class="h-[420px] from-indigo-600/20 via-fuchsia-600/10 to-emerald-600/10 bg-gradient-to-br"></div>
+      <div class="absolute inset-0 blur-3xl opacity-30" style="background: radial-gradient(600px 300px at 10% 10%, rgba(79,70,229,.25), transparent), radial-gradient(500px 280px at 90% 30%, rgba(236,72,153,.25), transparent), radial-gradient(500px 240px at 40% 90%, rgba(16,185,129,.25), transparent);"></div>
+    </div>
+    <div class="mx-auto max-w-7xl px-6 pt-10 pb-6">
+      <div class="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight">Gym Tracker</h1>
+          <p class="mt-2 text-neutral-300 max-w-xl">Log totals for push‑ups, pull‑ups, and any custom exercise. Fast buttons. Local save. Export/Import. Built to look clean on phone and desktop.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="addExerciseBtn" class="rounded-2xl px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-[.98] transition font-semibold shadow-lg shadow-indigo-600/30">Add Exercise</button>
+          <button id="exportBtn" class="rounded-2xl px-4 py-2 bg-neutral-800 hover:bg-neutral-700 active:scale-[.98] transition font-medium">Export</button>
+          <label class="relative cursor-pointer rounded-2xl px-4 py-2 bg-neutral-800 hover:bg-neutral-700 transition font-medium">
+            <span>Import</span>
+            <input id="importInput" type="file" accept="application/json" class="absolute inset-0 opacity-0 cursor-pointer" />
+          </label>
+          <button id="resetBtn" class="rounded-2xl px-4 py-2 bg-red-600/90 hover:bg-red-600 active:scale-[.98] transition font-semibold">Reset All</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Cards Grid -->
+  <main class="mx-auto max-w-7xl px-6 pb-16">
+    <div id="grid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+  </main>
+
+  <!-- Add Exercise Modal -->
+  <dialog id="exerciseDialog" class="glass rounded-2xl border border-white/10 p-0 w-[90vw] max-w-md text-neutral-100">
+    <form method="dialog">
+      <div class="p-5 border-b border-white/10">
+        <h3 class="text-xl font-bold">Add Exercise</h3>
+        <p class="text-neutral-300 text-sm mt-1">Name your exercise and choose an accent color.</p>
+      </div>
+      <div class="p-5 space-y-4">
+        <label class="block">
+          <span class="text-sm text-neutral-300">Exercise name</span>
+          <input id="newName" class="mt-1 w-full rounded-xl bg-neutral-900 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g., Push‑ups" />
+        </label>
+        <label class="block">
+          <span class="text-sm text-neutral-300">Accent color</span>
+          <input id="newColor" type="color" value="#6366F1" class="mt-1 w-full h-10 rounded-xl bg-neutral-900 border border-white/10 p-1" />
+        </label>
+      </div>
+      <div class="p-5 border-t border-white/10 flex justify-end gap-3">
+        <button class="rounded-xl px-4 py-2 bg-neutral-800 hover:bg-neutral-700">Cancel</button>
+        <button id="createExercise" class="rounded-xl px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-semibold">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="cardTemplate">
+    <article class="group relative overflow-hidden rounded-3xl border border-white/10 glass stripe shadow-2xl">
+      <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition pointer-events-none" data-accent-bg></div>
+      <div class="p-5">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-bold tracking-tight" data-name>Exercise</h3>
+            <p class="text-xs text-neutral-400 mt-0.5">Updated <span data-updated>—</span></p>
+          </div>
+          <button class="rounded-xl px-3 py-1.5 text-xs bg-neutral-900 border border-white/10 hover:bg-neutral-800" data-rename>Rename</button>
+        </div>
+
+        <div class="mt-5 flex items-baseline gap-3">
+          <div class="text-5xl font-extrabold tabular-nums" data-total>0</div>
+          <div class="text-sm text-neutral-400">reps</div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-4 gap-2">
+          <button class="rounded-xl bg-neutral-900 border border-white/10 py-2 hover:bg-neutral-800" data-inc="1">+1</button>
+          <button class="rounded-xl bg-neutral-900 border border-white/10 py-2 hover:bg-neutral-800" data-inc="5">+5</button>
+          <button class="rounded-xl bg-neutral-900 border border-white/10 py-2 hover:bg-neutral-800" data-inc="10">+10</button>
+          <button class="rounded-xl bg-neutral-900 border border-white/10 py-2 hover:bg-neutral-800" data-inc="-1">−1</button>
+        </div>
+
+        <div class="mt-3 flex gap-2">
+          <input type="number" inputmode="numeric" min="0" step="1" placeholder="Custom reps" class="w-full rounded-xl bg-neutral-900 border border-white/10 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500" data-custom>
+          <button class="rounded-xl px-4 py-2 bg-indigo-600 hover:bg-indigo-500 font-semibold" data-add>Log</button>
+        </div>
+
+        <div class="mt-5 flex items-center justify-between text-sm">
+          <button class="rounded-xl px-3 py-2 bg-neutral-900 border border-white/10 hover:bg-neutral-800" data-reset>Reset</button>
+          <button class="rounded-xl px-3 py-2 bg-red-600/90 hover:bg-red-600" data-delete>Delete</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+    const storeKey = 'gym-tracker:v1';
+    const nowISO = () => new Date().toISOString();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(storeKey);
+        return raw ? JSON.parse(raw) : { exercises: defaultExercises() };
+      } catch (e) {
+        console.error(e); return { exercises: defaultExercises() };
+      }
+    }
+    function saveState(state) {
+      localStorage.setItem(storeKey, JSON.stringify(state));
+    }
+
+    function defaultExercises() {
+      return [
+        { id: crypto.randomUUID(), name: 'Push‑ups', color: '#22c55e', total: 0, createdAt: nowISO(), updatedAt: nowISO() },
+        { id: crypto.randomUUID(), name: 'Pull‑ups', color: '#3b82f6', total: 0, createdAt: nowISO(), updatedAt: nowISO() },
+        { id: crypto.randomUUID(), name: 'Squats',  color: '#eab308', total: 0, createdAt: nowISO(), updatedAt: nowISO() },
+      ];
+    }
+
+    const state = loadState();
+
+    const grid = $('#grid');
+    const tmpl = $('#cardTemplate');
+
+    function render() {
+      grid.innerHTML = '';
+      state.exercises.forEach(ex => grid.appendChild(renderCard(ex)));
+    }
+
+    function renderCard(ex) {
+      const node = tmpl.content.firstElementChild.cloneNode(true);
+
+      const nameEl = $('[data-name]', node);
+      const totalEl = $('[data-total]', node);
+      const updatedEl = $('[data-updated]', node);
+      const accentBg = $('[data-accent-bg]', node);
+
+      nameEl.textContent = ex.name;
+      totalEl.textContent = ex.total;
+      updatedEl.textContent = timeAgo(new Date(ex.updatedAt));
+      accentBg.style.background = `radial-gradient(600px 200px at 110% -10%, ${hexToRgba(ex.color, 0.25)}, transparent)`;
+
+      // Wire up actions
+      $$('[data-inc]', node).forEach(btn => {
+        btn.addEventListener('click', () => {
+          const delta = parseInt(btn.getAttribute('data-inc'), 10);
+          updateTotal(ex.id, delta);
+        });
+      });
+
+      $('[data-add]', node).addEventListener('click', () => {
+        const custom = parseInt($('[data-custom]', node).value || '0', 10);
+        if (!isFinite(custom) || custom === 0) return;
+        updateTotal(ex.id, custom);
+        $('[data-custom]', node).value = '';
+      });
+
+      $('[data-reset]', node).addEventListener('click', () => {
+        if (!confirm(`Reset total for ${ex.name}?`)) return;
+        setTotal(ex.id, 0);
+      });
+
+      $('[data-delete]', node).addEventListener('click', () => {
+        if (!confirm(`Delete ${ex.name}? This cannot be undone.`)) return;
+        const idx = state.exercises.findIndex(e => e.id === ex.id);
+        if (idx !== -1) {
+          state.exercises.splice(idx, 1);
+          saveState(state); render();
+        }
+      });
+
+      $('[data-rename]', node).addEventListener('click', async () => {
+        const newName = prompt('Rename exercise:', ex.name)?.trim();
+        if (newName && newName !== ex.name) {
+          ex.name = newName; ex.updatedAt = nowISO(); saveState(state); render();
+        }
+      });
+
+      return node;
+    }
+
+    function updateTotal(id, delta) {
+      const ex = state.exercises.find(e => e.id === id);
+      if (!ex) return;
+      ex.total = Math.max(0, (ex.total || 0) + delta);
+      ex.updatedAt = nowISO();
+      saveState(state); render();
+    }
+
+    function setTotal(id, value) {
+      const ex = state.exercises.find(e => e.id === id);
+      if (!ex) return;
+      ex.total = Math.max(0, value|0);
+      ex.updatedAt = nowISO();
+      saveState(state); render();
+    }
+
+    function timeAgo(date) {
+      const s = Math.floor((Date.now() - date.getTime())/1000);
+      if (s < 60) return `${s}s ago`;
+      const m = Math.floor(s/60); if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m/60); if (h < 24) return `${h}h ago`;
+      const d = Math.floor(h/24); return `${d}d ago`;
+    }
+
+    function hexToRgba(hex, a = 1) {
+      const x = hex.replace('#','');
+      const bigint = parseInt(x.length === 3 ? x.split('').map(c=>c+c).join('') : x, 16);
+      const r = (bigint >> 16) & 255; const g = (bigint >> 8) & 255; const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+
+    // Toolbar actions
+    $('#addExerciseBtn').addEventListener('click', () => {
+      $('#exerciseDialog').showModal();
+      $('#newName').focus();
+    });
+
+    $('#createExercise').addEventListener('click', (e) => {
+      e.preventDefault();
+      const name = $('#newName').value.trim() || 'New Exercise';
+      const color = $('#newColor').value || '#6366F1';
+      state.exercises.unshift({ id: crypto.randomUUID(), name, color, total: 0, createdAt: nowISO(), updatedAt: nowISO() });
+      saveState(state); render();
+      $('#newName').value=''; $('#newColor').value='#6366F1';
+      $('#exerciseDialog').close();
+    });
+
+    $('#exportBtn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `gym-tracker-${new Date().toISOString().slice(0,10)}.json`;
+      a.click(); URL.revokeObjectURL(url);
+    });
+
+    $('#importInput').addEventListener('change', async (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!Array.isArray(data.exercises)) throw new Error('Invalid file');
+        state.exercises = data.exercises.map(x => ({
+          id: x.id || crypto.randomUUID(),
+          name: String(x.name || 'Exercise'),
+          color: x.color || '#6366F1',
+          total: Number.isFinite(x.total) ? x.total : 0,
+          createdAt: x.createdAt || nowISO(),
+          updatedAt: x.updatedAt || nowISO(),
+        }));
+        saveState(state); render();
+      } catch (err) {
+        alert('Failed to import file.');
+      } finally {
+        e.target.value = '';
+      }
+    });
+
+    $('#resetBtn').addEventListener('click', () => {
+      if (!confirm('Reset ALL totals to 0?')) return;
+      state.exercises.forEach(ex => { ex.total = 0; ex.updatedAt = nowISO(); });
+      saveState(state); render();
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
